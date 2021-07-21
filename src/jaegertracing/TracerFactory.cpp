@@ -38,21 +38,19 @@ TracerFactory::MakeTracer(const char* configuration,
             opentracing::configuration_parse_error);
     }
 
-    const auto serviceNameNode = yaml["service_name"];
-    if (!serviceNameNode) {
+    auto tracerConfig = jaegertracing::Config::parse(yaml);
+
+    if (_readFromEnv) {
+        tracerConfig.fromEnv();
+    }
+
+    if (tracerConfig.serviceName().empty()) {
         errorMessage = "`service_name` not provided";
         return opentracing::make_unexpected(
             opentracing::invalid_configuration_error);
     }
-    if (!serviceNameNode.IsScalar()) {
-        errorMessage = "`service_name` must be a string";
-        return opentracing::make_unexpected(
-            opentracing::invalid_configuration_error);
-    }
-    std::string serviceName = serviceNameNode.Scalar();
 
-    const auto tracerConfig = jaegertracing::Config::parse(yaml);
-    return jaegertracing::Tracer::make(serviceName, tracerConfig);
+    return jaegertracing::Tracer::make(tracerConfig);
 #endif  // JAEGERTRACING_WITH_YAML_CPP
 } catch (const std::bad_alloc&) {
     return opentracing::make_unexpected(
