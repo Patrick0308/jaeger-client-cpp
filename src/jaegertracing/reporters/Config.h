@@ -42,7 +42,6 @@ class Config {
 
     static constexpr auto kJAEGER_AGENT_HOST_ENV_PROP = "JAEGER_AGENT_HOST";
     static constexpr auto kJAEGER_AGENT_PORT_ENV_PROP = "JAEGER_AGENT_PORT";
-    static constexpr auto kJAEGER_ENDPOINT_ENV_PROP = "JAEGER_ENDPOINT";
 
     static constexpr auto kJAEGER_REPORTER_LOG_SPANS_ENV_PROP = "JAEGER_REPORTER_LOG_SPANS";
     static constexpr auto kJAEGER_REPORTER_FLUSH_INTERVAL_ENV_PROP = "JAEGER_REPORTER_FLUSH_INTERVAL";
@@ -97,24 +96,7 @@ class Config {
 
     std::unique_ptr<Reporter> makeReporter(const std::string& serviceName,
                                            logging::Logger& logger,
-                                           metrics::Metrics& metrics) const
-    {
-        std::unique_ptr<UDPTransport> sender(
-            new UDPTransport(net::IPAddress::v4(_localAgentHostPort), 0));
-        std::unique_ptr<RemoteReporter> remoteReporter(
-            new RemoteReporter(_bufferFlushInterval,
-                               _queueSize,
-                               std::move(sender),
-                               logger,
-                               metrics));
-        if (_logSpans) {
-            logger.info("Initializing logging reporter");
-            return std::unique_ptr<CompositeReporter>(new CompositeReporter(
-                { std::shared_ptr<RemoteReporter>(std::move(remoteReporter)),
-                  std::make_shared<LoggingReporter>(logger) }));
-        }
-        return std::unique_ptr<Reporter>(std::move(remoteReporter));
-    }
+                                           metrics::Metrics& metrics) const;
 
     int queueSize() const { return _queueSize; }
 
@@ -128,11 +110,6 @@ class Config {
     const std::string& localAgentHostPort() const
     {
         return _localAgentHostPort;
-    }
-
-    const std::string& endpoint() const
-    {
-      return _endpoint;
     }
 
     void fromEnv();

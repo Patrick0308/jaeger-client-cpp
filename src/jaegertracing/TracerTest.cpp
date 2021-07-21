@@ -426,7 +426,7 @@ TEST(Tracer, testTracerTags)
         false,
         samplers::Config(
             "const", 1, "", 0, samplers::Config::Clock::duration()),
-        reporters::Config(0, std::chrono::milliseconds(100), false, "", ""),
+        reporters::Config(0, std::chrono::milliseconds(100), false, ""),
         propagation::HeadersConfig(),
         baggage::RestrictionsConfig(),
         "test-service",

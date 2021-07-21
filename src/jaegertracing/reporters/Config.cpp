@@ -17,7 +17,6 @@
 #include <algorithm>
 
 #include "jaegertracing/reporters/Config.h"
-#include "jaegertracing/ThriftSender.h"
 #include "jaegertracing/reporters/CompositeReporter.h"
 #include "jaegertracing/reporters/LoggingReporter.h"
 #include "jaegertracing/reporters/RemoteReporter.h"
@@ -28,10 +27,8 @@ namespace reporters {
 
 constexpr int Config::kDefaultQueueSize;
 constexpr const char* Config::kDefaultLocalAgentHostPort;
-constexpr const char* Config::kDefaultEndpoint;
 constexpr const char* Config::kJAEGER_AGENT_HOST_ENV_PROP;
 constexpr const char* Config::kJAEGER_AGENT_PORT_ENV_PROP;
-constexpr const char* Config::kJAEGER_ENDPOINT_ENV_PROP;
 
 constexpr const char* Config::kJAEGER_REPORTER_LOG_SPANS_ENV_PROP;
 constexpr const char* Config::kJAEGER_REPORTER_FLUSH_INTERVAL_ENV_PROP;
@@ -41,15 +38,8 @@ std::unique_ptr<Reporter> Config::makeReporter(const std::string& serviceName,
                                                logging::Logger& logger,
                                                metrics::Metrics& metrics) const
 {
-    std::unique_ptr<utils::Transport> transporter =
-        _endpoint.empty()
-            ? (std::unique_ptr<utils::Transport>(new utils::UDPTransporter(
-                  net::IPAddress::v4(_localAgentHostPort), 0)))
-            : (std::unique_ptr<utils::Transport>(
-                  new utils::HTTPTransporter(net::URI::parse(_endpoint), 0)));
-
-    std::unique_ptr<ThriftSender> sender(new ThriftSender(
-        std::forward<std::unique_ptr<utils::Transport>>(transporter)));
+    std::unique_ptr<UDPTransport> sender(
+            new UDPTransport(net::IPAddress::v4(_localAgentHostPort), 0));
     std::unique_ptr<RemoteReporter> remoteReporter(new RemoteReporter(
         _bufferFlushInterval, _queueSize, std::move(sender), logger, metrics));
     if (_logSpans) {
@@ -60,7 +50,6 @@ std::unique_ptr<Reporter> Config::makeReporter(const std::string& serviceName,
     }
     return std::unique_ptr<Reporter>(std::move(remoteReporter));
 }
->>>>>>> 5fc9c65... Support Tracer tags and  configuration via environment variables (#181)
 
 void Config::fromEnv()
 {
@@ -83,12 +72,6 @@ void Config::fromEnv()
             oss << agentHostPort.first << ":" << port;
             _localAgentHostPort = oss.str();
         }
-    }
-
-    const auto endpoint =
-        utils::EnvVariable::getStringVariable(kJAEGER_ENDPOINT_ENV_PROP);
-    if (!endpoint.empty()) {
-        _endpoint = endpoint;
     }
 
     const auto logSpan = utils::EnvVariable::getBoolVariable(

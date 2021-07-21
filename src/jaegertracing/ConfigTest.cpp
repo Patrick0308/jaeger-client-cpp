@@ -105,8 +105,7 @@ TEST(Config, testFromEnv)
                   reporters::Config(10,
                                     std::chrono::milliseconds(100),
                                     false,
-                                    "host35:77",
-                                    "http://host36:56568"),
+                                    "host35:77"),
                   propagation::HeadersConfig(),
                   baggage::RestrictionsConfig(),
                   "test-service",
@@ -114,7 +113,6 @@ TEST(Config, testFromEnv)
 
     config.fromEnv();
 
-    ASSERT_EQ(std::string("http://host36:56568"), config.reporter().endpoint());
     ASSERT_EQ(std::string("host35:77"), config.reporter().localAgentHostPort());
 
     ASSERT_EQ(10, config.reporter().queueSize());
@@ -127,14 +125,11 @@ TEST(Config, testFromEnv)
 
     testutils::EnvVariable::setEnv("JAEGER_AGENT_HOST", "host33");
     testutils::EnvVariable::setEnv("JAEGER_AGENT_PORT", "45");
-    testutils::EnvVariable::setEnv("JAEGER_ENDPOINT", "http://host34:56567");
 
     testutils::EnvVariable::setEnv("JAEGER_REPORTER_MAX_QUEUE_SIZE", "33");
     testutils::EnvVariable::setEnv("JAEGER_REPORTER_FLUSH_INTERVAL", "45");
     testutils::EnvVariable::setEnv("JAEGER_REPORTER_LOG_SPANS", "true");
 
-    setEnv("JAEGER_SAMPLER_PARAM", "33");
-    setEnv("JAEGER_SAMPLER_TYPE", "const");
     testutils::EnvVariable::setEnv("JAEGER_SAMPLER_TYPE", "remote");
     testutils::EnvVariable::setEnv("JAEGER_SAMPLER_PARAM", "0.33");
     testutils::EnvVariable::setEnv("JAEGER_SAMPLING_ENDPOINT", "http://myagent:1234");
@@ -144,7 +139,6 @@ TEST(Config, testFromEnv)
 
     config.fromEnv();
 
-    ASSERT_EQ(std::string("http://host34:56567"), config.reporter().endpoint());
     ASSERT_EQ(std::string("host33:45"), config.reporter().localAgentHostPort());
 
     ASSERT_EQ(33, config.reporter().queueSize());
